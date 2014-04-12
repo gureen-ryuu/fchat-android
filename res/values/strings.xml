@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FChat</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    
+    <string name="fchat">F-Chat</string>
+    <string name="login">Login</string>
+    
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+
+</resources>
