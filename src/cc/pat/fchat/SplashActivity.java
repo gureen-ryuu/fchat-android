@@ -1,5 +1,22 @@
 package cc.pat.fchat;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import cc.pat.fchat.requests.LoginRequest;
+
+import com.android.volley.Request;
+import com.android.volley.Request.Method;
+import com.android.volley.Response;
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+
 import android.support.v4.app.FragmentActivity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -34,11 +51,6 @@ public class SplashActivity extends FragmentActivity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.v("Pat", "Broadcast event received!!!");
-			if (intent.getAction().equalsIgnoreCase(Action.LOGGED_IN)) {
-				Intent i = new Intent(SplashActivity.this, MainActivity.class);
-				startActivity(i);
-				finish();
-			}
 		}
 	}
 
@@ -61,11 +73,29 @@ public class SplashActivity extends FragmentActivity {
 				@Override
 				public void onClick(View v) {
 					Log.v("Pat", "Login in: " + username.getText().toString());
-					mBoundService.connect(username.getText().toString(), password.getText().toString());
+					login(username.getText().toString(), password.getText().toString());					
 				}
 			});
 		}
 	};
+	
+	private void login(String username, String password) {
+		LoginRequest loginRequest = new LoginRequest(username, password, new Response.Listener<String>() {
+			
+			@Override
+			public void onResponse(String response) {
+				Log.v("Pat", response);
+			}
+		}, new Response.ErrorListener() {
+			@Override
+			public void onErrorResponse(VolleyError error) {
+				VolleyLog.e("Error: ", error.getMessage());
+			}
+		});
+		loginRequest.setShouldCache(false);
+		FApp.instance.addToRequestQueue(loginRequest);
+	}
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

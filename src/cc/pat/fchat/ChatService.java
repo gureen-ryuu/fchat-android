@@ -10,6 +10,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
@@ -33,7 +41,6 @@ public class ChatService extends Service {
 	private Looper mServiceLooper;
 	private ServiceHandler mServiceHandler;
 	private String hostURL = "chat.f-list.net:8722";
-	
 
 	private final static String TAG = "pat";
 
@@ -132,7 +139,7 @@ public class ChatService extends Service {
 					@Override
 					public void onOpen() {
 						Log.d(TAG, "Status: Connected to " + wsuri);
-//						mConnection.sendTextMessage("Hello, world!");
+						//						mConnection.sendTextMessage("Hello, world!");
 					}
 
 					@Override
@@ -159,14 +166,16 @@ public class ChatService extends Service {
 			// loginIntent.setAction(Action.LOGGED_IN);
 			// sendBroadcast(loginIntent);
 		}
+
+		
+
 	}
 
 	@Override
 	public void onCreate() {
 		Log.v("Pat", "Starting service");
 		instance = this;
-		HandlerThread thread = new HandlerThread("ServiceStartArguments",
-				Process.THREAD_PRIORITY_BACKGROUND);
+		HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
 		thread.start();
 
 		mServiceLooper = thread.getLooper();
@@ -183,8 +192,7 @@ public class ChatService extends Service {
 			password = extras.getString("password");
 		}
 		this.startId = startId;
-		Log.v("Pat", "Service started " + startId + ":" + flags + " username: "
-				+ username + " password: " + password);
+		Log.v("Pat", "Service started " + startId + ":" + flags + " username: " + username + " password: " + password);
 		return Service.START_REDELIVER_INTENT;
 	}
 
