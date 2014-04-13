@@ -134,7 +134,7 @@ public class ChatService extends Service {
 		private boolean connect(final String character) {
 			final WebSocketConnection mConnection = new WebSocketConnection();
 			final String wsuri = "ws://" + hostURL;
-
+			final CommandsReceiver commandsReceiver = new CommandsReceiver();
 			try {
 				mConnection.connect(wsuri, new WebSocketHandler() {
 
@@ -154,7 +154,7 @@ public class ChatService extends Service {
 							mConnection.sendTextMessage(CommandsBuilder.PIN());
 							return;
 						}
-						CommandsReceiver.receiveCommand(payload);						 
+						commandsReceiver.receiveCommand(payload);						 
 					}
 
 					@Override
