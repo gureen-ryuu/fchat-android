@@ -8,6 +8,7 @@ import android.util.Log;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.android.volley.Response.ErrorListener;
 import com.android.volley.Response.Listener;
 
@@ -36,10 +37,13 @@ public class LoginRequest extends Request<String> {
     }
 
     @Override
+    public void deliverError(VolleyError error) {
+    	super.deliverError(error);
+    }
+    
+	@Override
     protected Response<String> parseNetworkResponse(NetworkResponse response) {
-        String jsonString = new String(response.data);
-        Log.v("Pat", jsonString);
-        return Response.success(response.toString(), getCacheEntry());
+        return Response.success(new String(response.data), getCacheEntry());
     }
 
     private static String getLoginUrl() {

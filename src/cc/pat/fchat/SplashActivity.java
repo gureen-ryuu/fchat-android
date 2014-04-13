@@ -1,21 +1,15 @@
 package cc.pat.fchat;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cc.pat.fchat.objects.Actions;
 import cc.pat.fchat.requests.LoginRequest;
+import cc.pat.fchat.utils.CommandsBuilder;
 
-import com.android.volley.Request;
-import com.android.volley.Request.Method;
 import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
 
 import android.support.v4.app.FragmentActivity;
 import android.content.BroadcastReceiver;
@@ -33,6 +27,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class SplashActivity extends FragmentActivity {
 
@@ -51,6 +46,11 @@ public class SplashActivity extends FragmentActivity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.v("Pat", "Broadcast event received!!!");
+			if (intent.getAction().equalsIgnoreCase(Actions.LOGGED_IN)) {
+				Intent startActivityIntent = new Intent(SplashActivity.this, MainActivity.class);
+				startActivity(startActivityIntent);
+				finish();
+			}
 		}
 	}
 
@@ -73,30 +73,59 @@ public class SplashActivity extends FragmentActivity {
 				@Override
 				public void onClick(View v) {
 					Log.v("Pat", "Login in: " + username.getText().toString());
-					login(username.getText().toString(), password.getText().toString());					
+					login(username.getText().toString(), password.getText().toString());
 				}
 			});
 		}
 	};
-	
+
 	private void login(String username, String password) {
-		LoginRequest loginRequest = new LoginRequest(username, password, new Response.Listener<String>() {
-			
-			@Override
-			public void onResponse(String response) {
-				Log.v("Pat", response);
-			}
-		}, new Response.ErrorListener() {
-			@Override
-			public void onErrorResponse(VolleyError error) {
-				VolleyLog.e("Error: ", error.getMessage());
-			}
-		});
+		LoginRequest loginRequest = new LoginRequest(username, password, new OnLoginResponse(), new OnErrorResponse());
 		loginRequest.setShouldCache(false);
-		FApp.instance.addToRequestQueue(loginRequest);
+		FApp.getInstance().addToRequestQueue(loginRequest);
 	}
 	
+	private class OnLoginResponse implements Response.Listener<String> {
 
+		@Override
+		public void onResponse(String response) {
+			try {
+				final JSONObject jsonResponse = new JSONObject(response);
+//				Log.v("Pat", "json response" + jsonResponse.toString());
+				String error = jsonResponse.getString("error");
+				if (error.length() > 0) {
+					Log.e("Pat", "Unable to login: " + jsonResponse.getString("error"));
+					Toast.makeText(getApplicationContext(), "Unable to login: " + jsonResponse.getString("error"), Toast.LENGTH_LONG).show();
+					;
+				} else {
+					Log.v("Pat", "Thread ID: " + Thread.currentThread().getId());
+					new Thread(new Runnable() {
+
+						@Override
+						public void run() {
+							try {
+								FApp.getInstance().saveSessionData(jsonResponse, username.getText().toString(), password.getText().toString());
+								mBoundService.connect(FApp.getInstance().characters.get(0));
+							} catch (JSONException e) {
+								e.printStackTrace();
+							}							
+						}
+					}).start();
+					;
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private class OnErrorResponse implements Response.ErrorListener {
+		@Override
+		public void onErrorResponse(VolleyError error) {
+			VolleyLog.e("Error: ", error.getMessage());
+		}
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -116,10 +145,10 @@ public class SplashActivity extends FragmentActivity {
 
 		chatReceiver = new ChatReceiver();
 		startService(chatServiceIntent);
-		
+
 		username = (EditText) findViewById(R.id.username);
 		password = (EditText) findViewById(R.id.password);
-		
+
 		username.setText("patochan");
 		password.setText("Ir0nmaiden");
 		loginButton = (Button) findViewById(R.id.loginButton);
@@ -138,7 +167,7 @@ public class SplashActivity extends FragmentActivity {
 		Log.v("Pat", "Resuming!!!!!!");
 		if (!isReceiverRegistered) {
 			IntentFilter filter = new IntentFilter();
-			filter.addAction(Action.LOGGED_IN);
+			filter.addAction(Actions.LOGGED_IN);
 
 			registerReceiver(chatReceiver, filter);
 			isReceiverRegistered = true;

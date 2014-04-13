@@ -1,5 +1,15 @@
 package cc.pat.fchat;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import cc.pat.fchat.objects.ChatCharacter;
+import cc.pat.fchat.objects.Friend;
+import cc.pat.fchat.utils.CommandsBuilder;
 import cc.pat.fchat.utils.ImageCaching.ImageLruCache;
 
 import com.android.volley.Request;
@@ -18,7 +28,51 @@ public class FApp extends Application {
 	private RequestQueue mRequestQueue;
 	private ImageLruCache mImageCache;
 	private ImageLoader mImageLoader;
-	public static FApp instance;
+	private static FApp instance;
+
+	public String account;
+	public String password;
+	public String accountID;
+
+	public String ticket;
+	public String defaultCharacter;
+	public ArrayList<String> characters;
+	public ArrayList<String> bookmarks;
+	public ArrayList<Friend> friends;
+	public HashMap<String, ChatCharacter> onlineCharacters;
+	public int onlineCharactersCount = 0;
+
+	public void saveSessionData(JSONObject sessionJSON, String account, String password) throws JSONException {
+		Log.v("Pat", "Thread ID inside session: " + Thread.currentThread().getId());
+		characters = new ArrayList<String>();
+		friends = new ArrayList<Friend>();
+		bookmarks = new ArrayList<String>();
+
+		JSONArray tmpJSONArray;
+		
+		ticket = sessionJSON.getString("ticket");
+		accountID = sessionJSON.getString("account_id");
+		defaultCharacter = sessionJSON.getString("default_character");
+		this.account = account;
+		this.password = password;
+		
+		tmpJSONArray = sessionJSON.getJSONArray("characters");
+		for (int index = 0; index < tmpJSONArray.length(); index++) {
+			characters.add(tmpJSONArray.getString(index));
+		}
+		
+		tmpJSONArray = sessionJSON.getJSONArray("friends");
+		for (int index = 0; index < tmpJSONArray.length(); index++) {
+			friends.add(new Friend(tmpJSONArray.getJSONObject(index)));
+		}
+		
+		tmpJSONArray = sessionJSON.getJSONArray("bookmarks");
+		for (int index = 0; index < tmpJSONArray.length(); index++) {
+			bookmarks.add(tmpJSONArray.getString(index));
+		}
+		
+		Log.v("Pat", "session data saved: " + defaultCharacter + " : : " + characters.size() + " ::::::" + CommandsBuilder.IDN(ticket, account, characters.get(0)));
+	}
 
 	@Override
 	public void onCreate() {
@@ -27,15 +81,24 @@ public class FApp extends Application {
 		mRequestQueue = Volley.newRequestQueue(getApplicationContext());
 		mImageCache = new ImageLruCache(ImageLruCache.getDefaultLruCacheSize());
 		mImageLoader = new ImageLoader(mRequestQueue, mImageCache);
+
+		onlineCharacters = new HashMap<String, ChatCharacter>();
 		instance = this;
+	}
+
+	public static FApp getInstance() {
+		return instance;
+	}
+
+	public void LISDone(){
+		
 	}
 	
 	public RequestQueue getRequestQueue() {
 		return mRequestQueue;
 	}
-	
+
 	public <T> void addToRequestQueue(Request<T> req, String tag) {
-		// set the default tag if tag is empty
 		req.setTag(TextUtils.isEmpty(tag) ? TAG : tag);
 
 		VolleyLog.d("Adding request to queue: %s", req.getUrl());
@@ -44,7 +107,6 @@ public class FApp extends Application {
 	}
 
 	public <T> void addToRequestQueue(Request<T> req) {
-		// set the default tag if tag is empty
 		Log.v("Pat", "Adding to request queue");
 		req.setTag(TAG);
 
@@ -56,7 +118,7 @@ public class FApp extends Application {
 			mRequestQueue.cancelAll(tag);
 		}
 	}
-	
+
 	public ImageLruCache getCache() {
 		return mImageCache;
 	}
@@ -64,8 +126,8 @@ public class FApp extends Application {
 	public RequestQueue getQueue() {
 		return mRequestQueue;
 	}
-	
-	public ImageLoader getImageLoader(){
+
+	public ImageLoader getImageLoader() {
 		return mImageLoader;
 	}
 

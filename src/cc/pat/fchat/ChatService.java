@@ -6,12 +6,19 @@ import android.os.IBinder;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import cc.pat.fchat.objects.Actions;
+import cc.pat.fchat.objects.Commands;
+import cc.pat.fchat.utils.CommandsBuilder;
+import cc.pat.fchat.utils.CommandsReceiver;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -36,11 +43,9 @@ import android.util.Log;
 
 public class ChatService extends Service {
 
-	private String username;
-	private String password;
 	private Looper mServiceLooper;
 	private ServiceHandler mServiceHandler;
-	private String hostURL = "chat.f-list.net:8722";
+	private String hostURL = "chat.f-list.net:9722";
 
 	private final static String TAG = "pat";
 
@@ -70,7 +75,7 @@ public class ChatService extends Service {
 
 			switch (operationType) {
 			case CONNECT:
-				connect();
+				connect(msg.getData().getString("character"));
 				break;
 			case LOGIN:
 				break;
@@ -119,9 +124,6 @@ public class ChatService extends Service {
 		private void initChatListener() {
 		}
 
-		private void handleChatCollision() {
-		}
-
 		private class FooMessageListener {
 		}
 
@@ -129,7 +131,7 @@ public class ChatService extends Service {
 			return true;
 		}
 
-		private boolean connect() {
+		private boolean connect(final String character) {
 			final WebSocketConnection mConnection = new WebSocketConnection();
 			final String wsuri = "ws://" + hostURL;
 
@@ -139,12 +141,20 @@ public class ChatService extends Service {
 					@Override
 					public void onOpen() {
 						Log.d(TAG, "Status: Connected to " + wsuri);
-						//						mConnection.sendTextMessage("Hello, world!");
+						Log.v("Pat", "Sending IDN: " + CommandsBuilder.IDN(character));
+						mConnection.sendTextMessage(CommandsBuilder.IDN(character));
+						launchMainActivity();
 					}
 
 					@Override
 					public void onTextMessage(String payload) {
-						Log.d(TAG, "Got echo: " + payload);
+						Log.d(TAG, "Got echo: " + payload.substring(0, 3));
+						if(payload.equals(Commands.PIN)){
+							Log.d("Pat", "Got PIN, returning PIN");
+							mConnection.sendTextMessage(CommandsBuilder.PIN());
+							return;
+						}
+						CommandsReceiver.receiveCommand(payload);						 
 					}
 
 					@Override
@@ -162,12 +172,10 @@ public class ChatService extends Service {
 
 		private void launchMainActivity() {
 			Log.v("Pat", "Sendint broadcast");
-			// Intent loginIntent = new Intent();
-			// loginIntent.setAction(Action.LOGGED_IN);
-			// sendBroadcast(loginIntent);
+			Intent loginIntent = new Intent();
+			loginIntent.setAction(Actions.LOGGED_IN);
+			sendBroadcast(loginIntent);
 		}
-
-		
 
 	}
 
@@ -186,24 +194,18 @@ public class ChatService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Bundle extras = intent.getExtras();
-		if (extras != null) {
-			username = extras.getString("username");
-			password = extras.getString("password");
-		}
 		this.startId = startId;
-		Log.v("Pat", "Service started " + startId + ":" + flags + " username: " + username + " password: " + password);
-		return Service.START_REDELIVER_INTENT;
+		return Service.START_STICKY;
 	}
 
-	public void connect(String username, String password) {
-		this.username = username;
-		this.password = password;
-
+	public void connect(String character) {
 		Log.v("Pat", "Starting connection");
 		Message msg = mServiceHandler.obtainMessage();
 		msg.arg1 = startId;
 		msg.arg2 = CONNECT;
+		Bundle args = new Bundle();
+		args.putString("character", character);
+		msg.setData(args);
 		mServiceHandler.sendMessage(msg);
 	}
 
