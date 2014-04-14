@@ -15,13 +15,13 @@ import cc.pat.fchat.objects.Commands;
 
 public class CommandsReceiver {
 
-	private final BlockingQueue<String> queue = new LinkedBlockingQueue<String>();	
+	private final BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
 	private final CommandHandlerThread commandHandlerThread = new CommandHandlerThread();
-	
-	public CommandsReceiver(){
+
+	public CommandsReceiver() {
 		commandHandlerThread.start();
 	}
-	
+
 	public void receiveCommand(String payload) {
 		try {
 			queue.put(payload);
@@ -41,14 +41,18 @@ public class CommandsReceiver {
 				} // Blocks until queue isn't empty.
 			}
 		}
-		
-		private void handleNextCommand() throws InterruptedException{
-			String payload = queue.take();					
+
+		private void handleNextCommand() throws InterruptedException {
+			String payload = queue.take();
 			try {
 				if (payload.startsWith(Commands.CON))
 					CON(payload.substring(4));
 				else if (payload.startsWith(Commands.LIS))
 					LIS(payload.substring(4));
+				else if (payload.startsWith(Commands.NLN))
+					NLN(payload.substring(4));
+				else if (payload.startsWith(Commands.FLN))
+					FLN(payload.substring(4));
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -79,5 +83,23 @@ public class CommandsReceiver {
 		long endTime = Calendar.getInstance().getTimeInMillis();
 
 		Log.v("Pat", "Finished LIS:  " + (endTime - startTime));
+	}
+
+	public static void NLN(String payload) throws JSONException {
+		JSONObject payloadJSON = new JSONObject(payload);
+		ChatCharacter onlineCharacter = new ChatCharacter();
+		onlineCharacter.initNLN(payloadJSON);
+	}
+
+	public static void FLN(String payload) throws JSONException {
+		JSONObject payloadJSON = new JSONObject(payload);
+		String identity = payloadJSON.getString("character");
+		FApp.getInstance().onlineCharacters.get(identity).setFLN();
+	}
+	
+	public static void STA(String payload) throws JSONException {
+		JSONObject payloadJSON = new JSONObject(payload);
+		String identity = payloadJSON.getString("character");
+		FApp.getInstance().onlineCharacters.get(identity).changeStatus(payloadJSON);
 	}
 }
