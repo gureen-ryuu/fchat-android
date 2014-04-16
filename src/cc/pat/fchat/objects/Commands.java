@@ -8,4 +8,6 @@ public class Commands {
 	public static final String MSG = "MSG";
 	public static final String NLN = "NLN";
 	public static final String PIN = "PIN";	
+	public static final String PRI = "PRI";
+	public static final String VAR = "VAR";
 }

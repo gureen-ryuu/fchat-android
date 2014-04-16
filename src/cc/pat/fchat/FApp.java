@@ -1,11 +1,11 @@
 package cc.pat.fchat;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.http.util.LangUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -180,15 +180,28 @@ public class FApp extends Application {
 						NLN(payload.substring(4));
 					else if (payload.startsWith(Commands.FLN))
 						FLN(payload.substring(4));
+					else if(payload.startsWith(Commands.MSG))
+						MSG(payload.substring(4));
+					else if(payload.startsWith(Commands.PRI)){
+						PRI(payload.substring(4));
+					}
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 
+		public void MSG(String payload){
+			
+		}
+		
+		public void PRI(String payload){
+			
+		}
+		
 		public void CON(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
-			FApp.getInstance().onlineCharactersCount = payloadJSON.getInt("count");
+			onlineCharactersCount = payloadJSON.getInt("count");
 		}
 
 		public void LIS(String payload) throws JSONException {
@@ -201,10 +214,12 @@ public class FApp extends Application {
 				onlineCharacters.put(character.identity, character);
 			}
 
-			if (onlineCharacters.size() == FApp.getInstance().onlineCharactersCount) {
+			if (onlineCharacters.size() == onlineCharactersCount) {
+				
 				Intent lisIntent = new Intent();
 				lisIntent.setAction(Actions.LIS_DONE);
 				sendBroadcast(lisIntent);
+				launchMainActivity();
 			}
 		}
 
@@ -225,6 +240,17 @@ public class FApp extends Application {
 			String identity = payloadJSON.getString("character");
 			onlineCharacters.get(identity).changeStatus(payloadJSON);
 		}
+	}
+	
+	private static class ServerVariables {
+//		public static 
+	}
+	
+	private void launchMainActivity() {
+		Log.v("Pat", "Sendint broadcast");
+		Intent loginIntent = new Intent();
+		loginIntent.setAction(Actions.LOGGED_IN);
+		sendBroadcast(loginIntent);
 	}
 
 }

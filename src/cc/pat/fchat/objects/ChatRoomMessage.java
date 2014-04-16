@@ -14,8 +14,8 @@ public class ChatRoomMessage extends ChatMessage {
 		channel = (ChatRoom) messageJSON.get("channel");
 	}
 	
-	public ChatRoomMessage(ChatCharacter from, ChatRoom chatroom, String message, Date timestamp, Boolean isSender ){
+	public ChatRoomMessage(ChatCharacter from, ChatRoom channel, String message, Date timestamp, Boolean isSender ){
 		super(from, message, timestamp, isSender);
-		this.channel = chatroom;
+		this.channel = channel;
 	}
 }

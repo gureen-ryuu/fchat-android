@@ -62,14 +62,6 @@ public class ChatService extends Service {
 			}
 		}
 
-		private void sendMessage(Bundle data) {
-
-			Intent messageIntent = new Intent();
-			// messageIntent.setAction(Action.MESSAGE_RECEIVED);
-			// messageIntent.putExtra("participant", chat.getParticipant());
-			sendBroadcast(messageIntent);
-		}
-
 		private boolean connect(final String character) {
 			final WebSocketConnection mConnection = new WebSocketConnection();
 			final String wsuri = "ws://" + hostURL;
@@ -83,7 +75,7 @@ public class ChatService extends Service {
 						Log.d(TAG, "Status: Connected to " + wsuri);
 						Log.v("Pat", "Sending IDN: " + CommandsBuilder.IDN(character));
 						mConnection.sendTextMessage(CommandsBuilder.IDN(character));
-						launchMainActivity();
+//						launchMainActivity();
 					}
 
 					@Override
