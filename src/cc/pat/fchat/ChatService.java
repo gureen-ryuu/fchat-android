@@ -4,38 +4,17 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import cc.pat.fchat.objects.Actions;
 import cc.pat.fchat.objects.Commands;
 import cc.pat.fchat.utils.CommandsBuilder;
-import cc.pat.fchat.utils.CommandsReceiver;
-
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
 
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
-import android.app.Service;
-import android.content.Intent;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
@@ -134,7 +113,8 @@ public class ChatService extends Service {
 		private boolean connect(final String character) {
 			final WebSocketConnection mConnection = new WebSocketConnection();
 			final String wsuri = "ws://" + hostURL;
-			final CommandsReceiver commandsReceiver = new CommandsReceiver();
+			final FApp.CommandsReceiver commandsReceiver = FApp.getInstance().commandsReceiver;
+				
 			try {
 				mConnection.connect(wsuri, new WebSocketHandler() {
 

@@ -1,13 +1,18 @@
 package cc.pat.fchat;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cc.pat.fchat.objects.Actions;
 import cc.pat.fchat.objects.ChatCharacter;
+import cc.pat.fchat.objects.Commands;
 import cc.pat.fchat.objects.Friend;
 import cc.pat.fchat.utils.CommandsBuilder;
 import cc.pat.fchat.utils.ImageCaching.ImageLruCache;
@@ -19,6 +24,7 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
 
 import android.app.Application;
+import android.content.Intent;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -41,6 +47,7 @@ public class FApp extends Application {
 	public ArrayList<Friend> friends;
 	public HashMap<String, ChatCharacter> onlineCharacters;
 	public int onlineCharactersCount = 0;
+	public CommandsReceiver commandsReceiver;
 
 	public void saveSessionData(JSONObject sessionJSON, String account, String password) throws JSONException {
 		Log.v("Pat", "Thread ID inside session: " + Thread.currentThread().getId());
@@ -82,6 +89,8 @@ public class FApp extends Application {
 		mImageCache = new ImageLruCache(ImageLruCache.getDefaultLruCacheSize());
 		mImageLoader = new ImageLoader(mRequestQueue, mImageCache);
 
+		commandsReceiver = new CommandsReceiver();
+		
 		onlineCharacters = new HashMap<String, ChatCharacter>();
 		instance = this;
 	}
@@ -129,6 +138,93 @@ public class FApp extends Application {
 
 	public ImageLoader getImageLoader() {
 		return mImageLoader;
+	}
+	
+	public class CommandsReceiver {
+
+		private final BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
+		private final CommandHandlerThread commandHandlerThread = new CommandHandlerThread();
+
+		public CommandsReceiver() {
+			commandHandlerThread.start();
+		}
+
+		public void receiveCommand(String payload) {
+			try {
+				queue.put(payload);
+			} catch (InterruptedException e1) {
+			}
+		}
+
+		private class CommandHandlerThread extends Thread {
+
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						handleNextCommand();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} // Blocks until queue isn't empty.
+				}
+			}
+
+			private void handleNextCommand() throws InterruptedException {
+				String payload = queue.take();
+				try {
+					if (payload.startsWith(Commands.CON))
+						CON(payload.substring(4));
+					else if (payload.startsWith(Commands.LIS))
+						LIS(payload.substring(4));
+					else if (payload.startsWith(Commands.NLN))
+						NLN(payload.substring(4));
+					else if (payload.startsWith(Commands.FLN))
+						FLN(payload.substring(4));
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		public void CON(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			FApp.getInstance().onlineCharactersCount = payloadJSON.getInt("count");
+		}
+
+		public void LIS(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			JSONArray characters = payloadJSON.getJSONArray("characters");
+
+			for (int i = 0; i < characters.length(); i++) {
+				ChatCharacter character = new ChatCharacter();
+				character.initLIS(characters.getJSONArray(i));
+				onlineCharacters.put(character.identity, character);
+			}
+
+			if (onlineCharacters.size() == FApp.getInstance().onlineCharactersCount) {
+				Intent lisIntent = new Intent();
+				lisIntent.setAction(Actions.LIS_DONE);
+				sendBroadcast(lisIntent);
+			}
+		}
+
+		public void NLN(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			ChatCharacter onlineCharacter = new ChatCharacter();
+			onlineCharacter.initNLN(payloadJSON);
+		}
+
+		public void FLN(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			String identity = payloadJSON.getString("character");
+			onlineCharacters.get(identity).setFLN();
+		}
+		
+		public void STA(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			String identity = payloadJSON.getString("character");
+			onlineCharacters.get(identity).changeStatus(payloadJSON);
+		}
 	}
 
 }
