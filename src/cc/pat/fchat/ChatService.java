@@ -31,7 +31,6 @@ public class ChatService extends Service {
 	private final static int CONNECT = 0;
 	private final static int INIT_CHAT_LISTENER = 1;
 	private final static int SEND_MESSAGE = 2;
-	private final static int INIT_CONTACTS_LISTENER = 3;
 	private final static int ADD_CHAT = 4;
 	private final static int LOGIN = 5;
 
@@ -58,32 +57,9 @@ public class ChatService extends Service {
 				break;
 			case LOGIN:
 				break;
-			case INIT_CHAT_LISTENER:
-				initChats();
-				initChatListener();
-				initContacts();
-				// initMessageListener();
-				break;
-			case SEND_MESSAGE:
-				sendMessage(msg.getData());
-				break;
-			case INIT_CONTACTS_LISTENER:
-				initContacts();
-				initContactsListener();
-				break;
-			case ADD_CHAT:
-				addChat(msg.getData());
+			default:
 				break;
 			}
-		}
-
-		private void addChat(Bundle data) {
-		}
-
-		private void initContacts() {
-		}
-
-		private void initContactsListener() {
 		}
 
 		private void sendMessage(Bundle data) {
@@ -92,22 +68,6 @@ public class ChatService extends Service {
 			// messageIntent.setAction(Action.MESSAGE_RECEIVED);
 			// messageIntent.putExtra("participant", chat.getParticipant());
 			sendBroadcast(messageIntent);
-		}
-
-		private void initMessageListener() {
-		}
-
-		private void initChats() {
-		}
-
-		private void initChatListener() {
-		}
-
-		private class FooMessageListener {
-		}
-
-		private boolean login() {
-			return true;
 		}
 
 		private boolean connect(final String character) {
