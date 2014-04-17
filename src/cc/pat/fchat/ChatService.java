@@ -35,7 +35,7 @@ public class ChatService extends Service {
 	private final static int LOGIN = 5;
 
 	private static ChatService instance = null;
-
+	private WebSocketConnection mConnection;
 	public static boolean isInstanceCreated() {
 		return instance != null;
 	}
@@ -63,7 +63,7 @@ public class ChatService extends Service {
 		}
 
 		private boolean connect(final String character) {
-			final WebSocketConnection mConnection = new WebSocketConnection();
+			mConnection = new WebSocketConnection();
 			final String wsuri = "ws://" + hostURL;
 			final FApp.CommandsReceiver commandsReceiver = FApp.getInstance().commandsReceiver;
 				
@@ -80,7 +80,8 @@ public class ChatService extends Service {
 
 					@Override
 					public void onTextMessage(String payload) {
-						Log.d(TAG, "Got echo: " + payload.substring(0, 3));
+//						Log.d(TAG, "Got echo: " + payload.substring(0, 3));
+						Log.d(TAG, "Got echo: " + payload);
 						if(payload.equals(Commands.PIN)){
 							Log.d("Pat", "Got PIN, returning PIN");
 							mConnection.sendTextMessage(CommandsBuilder.PIN());

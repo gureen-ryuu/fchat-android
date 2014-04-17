@@ -135,16 +135,16 @@ public class SplashActivity extends FragmentActivity {
 		}
 
 		chatServiceIntent = new Intent(getApplicationContext(), ChatService.class);
-		if (ChatService.isInstanceCreated()) {
-			Log.v("Pat", "Calling stop service");
-			try {
-				stopService(chatServiceIntent);
-			} catch (RuntimeException ex) {
-			}
-		}
+//		if (ChatService.isInstanceCreated()) {
+//			Log.v("Pat", "Calling stop service");
+//			try {
+//				stopService(chatServiceIntent);
+//			} catch (RuntimeException ex) {
+//			}
+//		}
 
 		chatReceiver = new ChatReceiver();
-		startService(chatServiceIntent);
+//		startService(chatServiceIntent);
 
 		username = (EditText) findViewById(R.id.username);
 		password = (EditText) findViewById(R.id.password);

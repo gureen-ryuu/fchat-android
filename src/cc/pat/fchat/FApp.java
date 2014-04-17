@@ -24,9 +24,15 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
 
 import android.app.Application;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
 
 public class FApp extends Application {
 
@@ -44,15 +50,37 @@ public class FApp extends Application {
 	public String defaultCharacter;
 	public ArrayList<String> characters;
 	public ArrayList<String> bookmarks;
-	public ArrayList<Friend> friends;
+	public ArrayList<Friend> accountFriends; //Obtained from API
+	
 	public HashMap<String, ChatCharacter> onlineCharacters;
 	public int onlineCharactersCount = 0;
 	public CommandsReceiver commandsReceiver;
+	private boolean mBound = false;
+	private ChatService mBoundService;
+	private Intent chatServiceIntent;
+	private HashMap<String, String> serverVariables;
+	
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			mBoundService = null;
+			mBound = false;
+			Log.v("pat", "Disconnected from service from FApp!");
+		}
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mBoundService = ((ChatService.ChatBinder) service).getService();
+			mBound = true;
+			Log.v("Pat", "Connected to service from FApp!");
+		}
+	};
 
 	public void saveSessionData(JSONObject sessionJSON, String account, String password) throws JSONException {
 		Log.v("Pat", "Thread ID inside session: " + Thread.currentThread().getId());
 		characters = new ArrayList<String>();
-		friends = new ArrayList<Friend>();
+		accountFriends = new ArrayList<Friend>();
 		bookmarks = new ArrayList<String>();
 
 		JSONArray tmpJSONArray;
@@ -70,7 +98,7 @@ public class FApp extends Application {
 		
 		tmpJSONArray = sessionJSON.getJSONArray("friends");
 		for (int index = 0; index < tmpJSONArray.length(); index++) {
-			friends.add(new Friend(tmpJSONArray.getJSONObject(index)));
+			accountFriends.add(new Friend(tmpJSONArray.getJSONObject(index)));
 		}
 		
 		tmpJSONArray = sessionJSON.getJSONArray("bookmarks");
@@ -81,17 +109,35 @@ public class FApp extends Application {
 		Log.v("Pat", "session data saved: " + defaultCharacter + " : : " + characters.size() + " ::::::" + CommandsBuilder.IDN(ticket, account, characters.get(0)));
 	}
 
+	private void startChatService(){
+		chatServiceIntent = new Intent(getApplicationContext(), ChatService.class);
+		if (ChatService.isInstanceCreated()) {
+			Log.v("Pat", "Calling stop service");
+			try {
+				stopService(chatServiceIntent);
+			} catch (RuntimeException ex) {
+			}
+		}
+		
+		startService(chatServiceIntent);
+		
+		bindService(chatServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+	}
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		
+		startChatService();
+		
 		Log.v("Pat", "Creating app");
 		mRequestQueue = Volley.newRequestQueue(getApplicationContext());
 		mImageCache = new ImageLruCache(ImageLruCache.getDefaultLruCacheSize());
 		mImageLoader = new ImageLoader(mRequestQueue, mImageCache);
 
-		commandsReceiver = new CommandsReceiver();
-		
+		commandsReceiver = new CommandsReceiver();		
 		onlineCharacters = new HashMap<String, ChatCharacter>();
+		serverVariables = new HashMap<String, String>();
 		instance = this;
 	}
 
@@ -182,9 +228,10 @@ public class FApp extends Application {
 						FLN(payload.substring(4));
 					else if(payload.startsWith(Commands.MSG))
 						MSG(payload.substring(4));
-					else if(payload.startsWith(Commands.PRI)){
+					else if(payload.startsWith(Commands.PRI))
 						PRI(payload.substring(4));
-					}
+					else if(payload.startsWith(Commands.VAR))
+						VAR(payload.substring(4));
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
@@ -215,11 +262,9 @@ public class FApp extends Application {
 			}
 
 			if (onlineCharacters.size() == onlineCharactersCount) {
-				
 				Intent lisIntent = new Intent();
 				lisIntent.setAction(Actions.LIS_DONE);
 				sendBroadcast(lisIntent);
-				launchMainActivity();
 			}
 		}
 
@@ -227,6 +272,7 @@ public class FApp extends Application {
 			JSONObject payloadJSON = new JSONObject(payload);
 			ChatCharacter onlineCharacter = new ChatCharacter();
 			onlineCharacter.initNLN(payloadJSON);
+			onlineCharacters.put(onlineCharacter.identity, onlineCharacter);
 		}
 
 		public void FLN(String payload) throws JSONException {
@@ -240,10 +286,13 @@ public class FApp extends Application {
 			String identity = payloadJSON.getString("character");
 			onlineCharacters.get(identity).changeStatus(payloadJSON);
 		}
-	}
-	
-	private static class ServerVariables {
-//		public static 
+		
+		public void VAR(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			String value = payloadJSON.getString("value");
+			String variable = payloadJSON.getString("variable");
+			serverVariables.put(variable, value);
+		}
 	}
 	
 	private void launchMainActivity() {
