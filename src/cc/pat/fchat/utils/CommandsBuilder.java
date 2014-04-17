@@ -35,6 +35,14 @@ public class CommandsBuilder {
 		return Commands.PIN;
 	}
 	
+	public static String ORS(){
+		return Commands.ORS;
+	}
+	
+	public static String CHA(){
+		return Commands.CHA;
+	}
+	
 	/** Syntax <br/>
 		MSG { "channel": string, "message": string } <br/>
 		Raw sample <br/>

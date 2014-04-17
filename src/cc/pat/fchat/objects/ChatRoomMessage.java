@@ -7,14 +7,14 @@ import org.json.JSONObject;
 
 public class ChatRoomMessage extends ChatMessage {
 
-	public ChatRoom channel;
+	public Channel channel;
 
 	public ChatRoomMessage(JSONObject messageJSON) throws JSONException {
 		super(messageJSON);
-		channel = (ChatRoom) messageJSON.get("channel");
+		channel = (Channel) messageJSON.get("channel");
 	}
 	
-	public ChatRoomMessage(ChatCharacter from, ChatRoom channel, String message, Date timestamp, Boolean isSender ){
+	public ChatRoomMessage(ChatCharacter from, Channel channel, String message, Date timestamp, Boolean isSender ){
 		super(from, message, timestamp, isSender);
 		this.channel = channel;
 	}

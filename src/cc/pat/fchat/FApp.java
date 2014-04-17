@@ -2,6 +2,8 @@ package cc.pat.fchat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -11,9 +13,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import cc.pat.fchat.objects.Actions;
+import cc.pat.fchat.objects.Channel;
+import cc.pat.fchat.objects.Channel.ChannelMode;
 import cc.pat.fchat.objects.ChatCharacter;
+import cc.pat.fchat.objects.ChatMessage;
+import cc.pat.fchat.objects.ChatRoomMessage;
 import cc.pat.fchat.objects.Commands;
 import cc.pat.fchat.objects.Friend;
+import cc.pat.fchat.objects.PrivateMessage;
 import cc.pat.fchat.utils.CommandsBuilder;
 import cc.pat.fchat.utils.ImageCaching.ImageLruCache;
 
@@ -51,7 +58,9 @@ public class FApp extends Application {
 	public ArrayList<String> characters;
 	public ArrayList<String> bookmarks;
 	public ArrayList<Friend> accountFriends; //Obtained from API
-	
+	//	public HashMap<String, ChatCharacter> friendsList;
+	private HashSet<String> friendsList;
+
 	public HashMap<String, ChatCharacter> onlineCharacters;
 	public int onlineCharactersCount = 0;
 	public CommandsReceiver commandsReceiver;
@@ -59,7 +68,7 @@ public class FApp extends Application {
 	private ChatService mBoundService;
 	private Intent chatServiceIntent;
 	private HashMap<String, String> serverVariables;
-	
+
 	private ServiceConnection mConnection = new ServiceConnection() {
 
 		@Override
@@ -67,6 +76,7 @@ public class FApp extends Application {
 			mBoundService = null;
 			mBound = false;
 			Log.v("pat", "Disconnected from service from FApp!");
+
 		}
 
 		@Override
@@ -84,32 +94,32 @@ public class FApp extends Application {
 		bookmarks = new ArrayList<String>();
 
 		JSONArray tmpJSONArray;
-		
+
 		ticket = sessionJSON.getString("ticket");
 		accountID = sessionJSON.getString("account_id");
 		defaultCharacter = sessionJSON.getString("default_character");
 		this.account = account;
 		this.password = password;
-		
+
 		tmpJSONArray = sessionJSON.getJSONArray("characters");
 		for (int index = 0; index < tmpJSONArray.length(); index++) {
 			characters.add(tmpJSONArray.getString(index));
 		}
-		
+
 		tmpJSONArray = sessionJSON.getJSONArray("friends");
 		for (int index = 0; index < tmpJSONArray.length(); index++) {
 			accountFriends.add(new Friend(tmpJSONArray.getJSONObject(index)));
 		}
-		
+
 		tmpJSONArray = sessionJSON.getJSONArray("bookmarks");
 		for (int index = 0; index < tmpJSONArray.length(); index++) {
 			bookmarks.add(tmpJSONArray.getString(index));
 		}
-		
+
 		Log.v("Pat", "session data saved: " + defaultCharacter + " : : " + characters.size() + " ::::::" + CommandsBuilder.IDN(ticket, account, characters.get(0)));
 	}
 
-	private void startChatService(){
+	private void startChatService() {
 		chatServiceIntent = new Intent(getApplicationContext(), ChatService.class);
 		if (ChatService.isInstanceCreated()) {
 			Log.v("Pat", "Calling stop service");
@@ -118,25 +128,27 @@ public class FApp extends Application {
 			} catch (RuntimeException ex) {
 			}
 		}
-		
+
 		startService(chatServiceIntent);
-		
+
 		bindService(chatServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
 	}
-	
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		
+
 		startChatService();
-		
+
 		Log.v("Pat", "Creating app");
 		mRequestQueue = Volley.newRequestQueue(getApplicationContext());
 		mImageCache = new ImageLruCache(ImageLruCache.getDefaultLruCacheSize());
 		mImageLoader = new ImageLoader(mRequestQueue, mImageCache);
 
-		commandsReceiver = new CommandsReceiver();		
+		commandsReceiver = new CommandsReceiver();
 		onlineCharacters = new HashMap<String, ChatCharacter>();
+		//		friendsList = new HashMap<String, ChatCharacter>();
+		friendsList = new HashSet<String>();
 		serverVariables = new HashMap<String, String>();
 		instance = this;
 	}
@@ -145,10 +157,10 @@ public class FApp extends Application {
 		return instance;
 	}
 
-	public void LISDone(){
-		
+	public void LISDone() {
+
 	}
-	
+
 	public RequestQueue getRequestQueue() {
 		return mRequestQueue;
 	}
@@ -185,7 +197,7 @@ public class FApp extends Application {
 	public ImageLoader getImageLoader() {
 		return mImageLoader;
 	}
-	
+
 	public class CommandsReceiver {
 
 		private final BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
@@ -226,26 +238,49 @@ public class FApp extends Application {
 						NLN(payload.substring(4));
 					else if (payload.startsWith(Commands.FLN))
 						FLN(payload.substring(4));
-					else if(payload.startsWith(Commands.MSG))
+					else if (payload.startsWith(Commands.MSG))
 						MSG(payload.substring(4));
-					else if(payload.startsWith(Commands.PRI))
+					else if (payload.startsWith(Commands.PRI))
 						PRI(payload.substring(4));
-					else if(payload.startsWith(Commands.VAR))
+					else if (payload.startsWith(Commands.VAR))
 						VAR(payload.substring(4));
+					else if (payload.startsWith(Commands.FRL))
+						FRL(payload.substring(4));
+					else if (payload.startsWith(Commands.ORS))
+						ORS(payload.substring(4));
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 
-		public void MSG(String payload){
-			
-		}
+		/**Syntax
+		>> ORS { "channels": [object] }
+		Raw sample
+		ORS { channels: [{"name":"ADH-300f8f419e0c4814c6a8","characters":0,"title":"Ariel's Fun Club"},
+						{"name":"ADH-d2afa269718e5ff3fae7","characters":6,"title":"Monster Girl Dungeon RPG"},
+						{"name":"ADH-75027f927bba58dee47b","characters":2,"title":"Naruto Descendants OOC"} ...] }
+		*/
 		
-		public void PRI(String payload){
-			
+		public void ORS(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			Channel channel = new Channel(payloadJSON, Channel.ChannelType.PRIVATE, ChannelMode.BOTH);
 		}
+
+		public void MSG(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			ChatMessage chatMessage = new ChatRoomMessage(payloadJSON);			
+		}
+
 		
+		/** PRI { "character": string, "message": string }
+		 */
+		public void PRI(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			String senderIdentity = payloadJSON.getString("character");
+			ChatMessage chatMessage = new PrivateMessage(onlineCharacters.get(senderIdentity), payloadJSON.getString("message"));
+		}
+
 		public void CON(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
 			onlineCharactersCount = payloadJSON.getInt("count");
@@ -280,21 +315,29 @@ public class FApp extends Application {
 			String identity = payloadJSON.getString("character");
 			onlineCharacters.get(identity).setFLN();
 		}
-		
+
 		public void STA(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
 			String identity = payloadJSON.getString("character");
 			onlineCharacters.get(identity).changeStatus(payloadJSON);
 		}
-		
+
 		public void VAR(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
 			String value = payloadJSON.getString("value");
 			String variable = payloadJSON.getString("variable");
 			serverVariables.put(variable, value);
 		}
+
+		public void FRL(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			JSONArray friendsListJSON = payloadJSON.getJSONArray("characters");
+			for (int i = 0; i < friendsListJSON.length(); i++) {
+				friendsList.add(friendsListJSON.getString(i));
+			}
+		}
 	}
-	
+
 	private void launchMainActivity() {
 		Log.v("Pat", "Sendint broadcast");
 		Intent loginIntent = new Intent();
