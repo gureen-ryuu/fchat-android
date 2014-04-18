@@ -1,6 +1,7 @@
 package cc.pat.fchat;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -15,6 +16,7 @@ import org.json.JSONObject;
 import cc.pat.fchat.objects.Actions;
 import cc.pat.fchat.objects.Channel;
 import cc.pat.fchat.objects.Channel.ChannelMode;
+import cc.pat.fchat.objects.Channel.ChannelType;
 import cc.pat.fchat.objects.ChatCharacter;
 import cc.pat.fchat.objects.ChatMessage;
 import cc.pat.fchat.objects.ChatRoomMessage;
@@ -59,13 +61,15 @@ public class FApp extends Application {
 	public ArrayList<String> bookmarks;
 	public ArrayList<Friend> accountFriends; //Obtained from API
 	//	public HashMap<String, ChatCharacter> friendsList;
-	private HashSet<String> friendsList;
+	public HashSet<String> friendsList;
+	public HashMap<String, Channel> openChannelsList;
+	public HashMap<String, Channel> publicChannelsList;
 
 	public HashMap<String, ChatCharacter> onlineCharacters;
 	public int onlineCharactersCount = 0;
 	public CommandsReceiver commandsReceiver;
 	private boolean mBound = false;
-	private ChatService mBoundService;
+	public ChatService mBoundService;
 	private Intent chatServiceIntent;
 	private HashMap<String, String> serverVariables;
 
@@ -147,6 +151,8 @@ public class FApp extends Application {
 
 		commandsReceiver = new CommandsReceiver();
 		onlineCharacters = new HashMap<String, ChatCharacter>();
+		openChannelsList = new HashMap<String, Channel>();
+		publicChannelsList = new HashMap<String, Channel>();
 		//		friendsList = new HashMap<String, ChatCharacter>();
 		friendsList = new HashSet<String>();
 		serverVariables = new HashMap<String, String>();
@@ -230,30 +236,48 @@ public class FApp extends Application {
 			private void handleNextCommand() throws InterruptedException {
 				String payload = queue.take();
 				try {
-					if (payload.startsWith(Commands.CON))
+					if (payload.startsWith(Commands.CHA))
+						CHA(payload.substring(4));
+					else if (payload.startsWith(Commands.CON))
 						CON(payload.substring(4));
-					else if (payload.startsWith(Commands.LIS))
-						LIS(payload.substring(4));
-					else if (payload.startsWith(Commands.NLN))
-						NLN(payload.substring(4));
 					else if (payload.startsWith(Commands.FLN))
 						FLN(payload.substring(4));
+					else if (payload.startsWith(Commands.FRL))
+						FRL(payload.substring(4));
+					else if (payload.startsWith(Commands.LIS))
+						LIS(payload.substring(4));
 					else if (payload.startsWith(Commands.MSG))
 						MSG(payload.substring(4));
+					else if (payload.startsWith(Commands.NLN))
+						NLN(payload.substring(4));
+					else if (payload.startsWith(Commands.ORS))
+						ORS(payload.substring(4));
 					else if (payload.startsWith(Commands.PRI))
 						PRI(payload.substring(4));
 					else if (payload.startsWith(Commands.VAR))
 						VAR(payload.substring(4));
-					else if (payload.startsWith(Commands.FRL))
-						FRL(payload.substring(4));
-					else if (payload.startsWith(Commands.ORS))
-						ORS(payload.substring(4));
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 
+		public void CHA(String payload) throws JSONException {
+			JSONObject payloadJSON = new JSONObject(payload);
+			JSONArray channelsJSON = payloadJSON.getJSONArray("channels");
+			
+			for(int i=0; i < channelsJSON.length(); i++){
+				JSONObject channelJSON = channelsJSON.getJSONObject(i);
+				Channel channel = new Channel();
+				channel.charactersNumber = channelJSON.getInt("characters");
+				channel.channelName = channelJSON.getString("name");
+				channel.channelTitle = channel.channelName;
+				channel.channelType = ChannelType.PUBLIC;
+				channel.channelMode = ChannelMode.valueOf(channelJSON.getString("mode").toUpperCase());
+//				publicChannelsList.put(channel.channelName, channel);
+			}
+		}
+		
 		/**Syntax
 		>> ORS { "channels": [object] }
 		Raw sample
@@ -264,12 +288,37 @@ public class FApp extends Application {
 		
 		public void ORS(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
-			Channel channel = new Channel(payloadJSON, Channel.ChannelType.PRIVATE, ChannelMode.BOTH);
+			JSONArray channelsJSON = payloadJSON.getJSONArray("channels");
+			
+			for(int i=0; i < channelsJSON.length(); i++){
+				JSONObject channelJSON = channelsJSON.getJSONObject(i);
+				Channel channel = new Channel();
+				channel.charactersNumber = channelJSON.getInt("characters");
+				channel.channelName = channelJSON.getString("name");
+				channel.channelTitle = channelJSON.getString("title");
+				channel.channelType = ChannelType.PRIVATE;
+				channel.channelMode = ChannelMode.BOTH;
+			}
 		}
 
+		/** Syntax
+	 	MSG { "character": string, "message": string, "channel": string }
+		*/		
 		public void MSG(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
-			ChatMessage chatMessage = new ChatRoomMessage(payloadJSON);			
+			String senderIdentity = payloadJSON.getString("character");
+			String channelID = payloadJSON.getString("channel");
+			ChatRoomMessage chatMessage = new ChatRoomMessage();
+			chatMessage.from = (ChatCharacter) onlineCharacters.get(senderIdentity);
+			chatMessage.message = payloadJSON.getString("message");
+			chatMessage.sentTime = Calendar.getInstance().getTime();
+			chatMessage.isSender = false;
+			Channel destinationChannel = openChannelsList.get(channelID);
+			if(destinationChannel != null){
+				chatMessage.channel = destinationChannel;
+				destinationChannel.roomMessages.add(chatMessage);
+			}
+			
 		}
 
 		
@@ -278,7 +327,11 @@ public class FApp extends Application {
 		public void PRI(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
 			String senderIdentity = payloadJSON.getString("character");
-			ChatMessage chatMessage = new PrivateMessage(onlineCharacters.get(senderIdentity), payloadJSON.getString("message"));
+			PrivateMessage chatMessage = new PrivateMessage();
+			chatMessage.from = (ChatCharacter) onlineCharacters.get(senderIdentity);
+			chatMessage.message = payloadJSON.getString("message");
+			chatMessage.sentTime = Calendar.getInstance().getTime();
+			chatMessage.isSender = false;
 		}
 
 		public void CON(String payload) throws JSONException {
@@ -300,6 +353,7 @@ public class FApp extends Application {
 				Intent lisIntent = new Intent();
 				lisIntent.setAction(Actions.LIS_DONE);
 				sendBroadcast(lisIntent);
+				launchMainActivity();
 			}
 		}
 

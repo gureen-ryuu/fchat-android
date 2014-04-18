@@ -33,6 +33,7 @@ public class ChatService extends Service {
 	private final static int SEND_MESSAGE = 2;
 	private final static int ADD_CHAT = 4;
 	private final static int LOGIN = 5;
+	private final static int SEND_COMMAND = 6;	
 
 	private static ChatService instance = null;
 	private WebSocketConnection mConnection;
@@ -56,6 +57,13 @@ public class ChatService extends Service {
 				connect(msg.getData().getString("character"));
 				break;
 			case LOGIN:
+				break;
+			case SEND_COMMAND:
+				String command = msg.getData().getString("command");
+				if(command.equalsIgnoreCase(Commands.ORS))
+					mConnection.sendTextMessage(CommandsBuilder.ORS());
+				else if(command.equalsIgnoreCase(Commands.CHA))
+					mConnection.sendTextMessage(CommandsBuilder.CHA());
 				break;
 			default:
 				break;
@@ -81,7 +89,11 @@ public class ChatService extends Service {
 					@Override
 					public void onTextMessage(String payload) {
 //						Log.d(TAG, "Got echo: " + payload.substring(0, 3));
-						Log.d(TAG, "Got echo: " + payload);
+						if(payload.length() >= 120)
+							Log.d(TAG, "Got echo: " + payload.substring(0, 120));
+						else
+							Log.d(TAG, "Got echo: " + payload);
+						
 						if(payload.equals(Commands.PIN)){
 							Log.d("Pat", "Got PIN, returning PIN");
 							mConnection.sendTextMessage(CommandsBuilder.PIN());
@@ -202,6 +214,16 @@ public class ChatService extends Service {
 		//
 		// return connection.isConnected() && connection.isAuthenticated();
 		return true;
+	}
+
+	public void sendCommand(String command) {
+		Message msg = mServiceHandler.obtainMessage();
+		Bundle args = new Bundle();
+		args.putString("command", command);
+		msg.arg1 = startId;
+		msg.arg2 = SEND_COMMAND;
+		msg.setData(args);
+		mServiceHandler.sendMessage(msg);
 	}
 
 }
