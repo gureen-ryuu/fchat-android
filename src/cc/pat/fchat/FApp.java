@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.http.util.LangUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,7 +16,6 @@ import cc.pat.fchat.objects.Channel;
 import cc.pat.fchat.objects.Channel.ChannelMode;
 import cc.pat.fchat.objects.Channel.ChannelType;
 import cc.pat.fchat.objects.ChatCharacter;
-import cc.pat.fchat.objects.ChatMessage;
 import cc.pat.fchat.objects.ChatRoomMessage;
 import cc.pat.fchat.objects.Commands;
 import cc.pat.fchat.objects.Friend;
@@ -40,8 +37,6 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
 
 public class FApp extends Application {
 
@@ -266,6 +261,7 @@ public class FApp extends Application {
 			JSONObject payloadJSON = new JSONObject(payload);
 			JSONArray channelsJSON = payloadJSON.getJSONArray("channels");
 			
+			ArrayList<Channel> publicChannels = new ArrayList<Channel>();
 			for(int i=0; i < channelsJSON.length(); i++){
 				JSONObject channelJSON = channelsJSON.getJSONObject(i);
 				Channel channel = new Channel();
@@ -275,7 +271,13 @@ public class FApp extends Application {
 				channel.channelType = ChannelType.PUBLIC;
 				channel.channelMode = ChannelMode.valueOf(channelJSON.getString("mode").toUpperCase());
 //				publicChannelsList.put(channel.channelName, channel);
+				publicChannels.add(channel);
 			}
+			
+			Intent channelsRetrievedIntent = new Intent();
+			channelsRetrievedIntent.setAction(Actions.PUBLIC_CHANNELS_RETRIEVED);
+			channelsRetrievedIntent.putExtra("channels", publicChannels);
+			sendBroadcast(channelsRetrievedIntent);
 		}
 		
 		/**Syntax
