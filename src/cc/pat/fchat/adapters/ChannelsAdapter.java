@@ -11,12 +11,12 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class PublicChannelsAdapter extends BaseAdapter {
+public class ChannelsAdapter extends BaseAdapter {
 
 	private ArrayList<Channel> channels;
 	private Context mContext;
 
-	public PublicChannelsAdapter(ArrayList<Channel> channels, Context context) {
+	public ChannelsAdapter(ArrayList<Channel> channels, Context context) {
 		mContext = context;
 		this.channels = channels;
 	}
@@ -53,12 +53,14 @@ public class PublicChannelsAdapter extends BaseAdapter {
 			viewHolder = (ViewHolder) convertView.getTag();
 		}
 
-		viewHolder.channelName.setText(channels.get(pos).channelName);
+		viewHolder.channelName.setText(channels.get(pos).channelTitle);
 		viewHolder.characterCount.setText(" (" + String.valueOf(channels.get(pos).charactersNumber)+ ")");
 
 		return convertView;
 	}
 
+	
+	
 	static class ViewHolder {
 		TextView channelName;
 		TextView characterCount;

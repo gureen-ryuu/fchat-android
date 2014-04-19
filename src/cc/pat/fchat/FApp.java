@@ -2,6 +2,9 @@ package cc.pat.fchat;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.BlockingQueue;
@@ -273,13 +276,26 @@ public class FApp extends Application {
 //				publicChannelsList.put(channel.channelName, channel);
 				publicChannels.add(channel);
 			}
-			
+			Collections.sort(publicChannels, new PublicChannelComparator());
 			Intent channelsRetrievedIntent = new Intent();
 			channelsRetrievedIntent.setAction(Actions.PUBLIC_CHANNELS_RETRIEVED);
 			channelsRetrievedIntent.putExtra("channels", publicChannels);
 			sendBroadcast(channelsRetrievedIntent);
 		}
 		
+		public class PublicChannelComparator implements Comparator<Channel> {
+		    @Override
+		    public int compare(Channel o1, Channel o2) {
+		        return o1.channelName.compareToIgnoreCase(o2.channelName);
+		    }
+		}
+		
+		public class PrivateChannelComparator implements Comparator<Channel> {
+		    @Override
+		    public int compare(Channel o1, Channel o2) {
+		        return o2.charactersNumber - o1.charactersNumber;
+		    }
+		}
 		/**Syntax
 		>> ORS { "channels": [object] }
 		Raw sample
@@ -288,10 +304,12 @@ public class FApp extends Application {
 						{"name":"ADH-75027f927bba58dee47b","characters":2,"title":"Naruto Descendants OOC"} ...] }
 		*/
 		
+		
 		public void ORS(String payload) throws JSONException {
 			JSONObject payloadJSON = new JSONObject(payload);
 			JSONArray channelsJSON = payloadJSON.getJSONArray("channels");
 			
+			ArrayList<Channel> privateChannels = new ArrayList<Channel>();	
 			for(int i=0; i < channelsJSON.length(); i++){
 				JSONObject channelJSON = channelsJSON.getJSONObject(i);
 				Channel channel = new Channel();
@@ -300,7 +318,13 @@ public class FApp extends Application {
 				channel.channelTitle = channelJSON.getString("title");
 				channel.channelType = ChannelType.PRIVATE;
 				channel.channelMode = ChannelMode.BOTH;
+				privateChannels.add(channel);
 			}
+			Collections.sort(privateChannels, new PrivateChannelComparator());
+			Intent channelsRetrievedIntent = new Intent();
+			channelsRetrievedIntent.setAction(Actions.PRIVATE_CHANNELS_RETRIEVED);
+			channelsRetrievedIntent.putExtra("channels", privateChannels);
+			sendBroadcast(channelsRetrievedIntent);
 		}
 
 		/** Syntax

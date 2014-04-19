@@ -37,11 +37,13 @@ public class MainActivity extends FragmentActivity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.v("Pat","Broadcast event received: " + intent.getAction());
-			if(intent.getAction().equalsIgnoreCase(Actions.PUBLIC_CHANNELS_RETRIEVED)){
-				if(publicRoomsFragment != null){
+			if(intent.getAction().equalsIgnoreCase(Actions.PUBLIC_CHANNELS_RETRIEVED) && publicRoomsFragment != null){
 					ArrayList<Channel> channels = (ArrayList<Channel>) intent.getSerializableExtra("channels");
 					((PublicChannelsFragment)publicRoomsFragment).refreshList(channels);
-				}
+			}
+			else if(intent.getAction().equalsIgnoreCase(Actions.PRIVATE_CHANNELS_RETRIEVED) && privateRoomsFragment != null){
+					ArrayList<Channel> channels = (ArrayList<Channel>) intent.getSerializableExtra("channels");
+					((PrivateChannelsFragment)privateRoomsFragment).refreshList(channels);
 			}
 		}
 	}
@@ -66,7 +68,8 @@ public class MainActivity extends FragmentActivity {
 		if (!isReceiverRegistered) {
 			IntentFilter filter = new IntentFilter();
 			filter.addAction(Actions.PUBLIC_CHANNELS_RETRIEVED);
-
+			filter.addAction(Actions.PRIVATE_CHANNELS_RETRIEVED);
+			
 			registerReceiver(fChatReceiver, filter);
 			isReceiverRegistered = true;
 			Log.v("Pat", "Registered receiver!");

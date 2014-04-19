@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import cc.pat.fchat.FApp;
 import cc.pat.fchat.R;
-import cc.pat.fchat.adapters.PublicChannelsAdapter;
+import cc.pat.fchat.adapters.ChannelsAdapter;
 import cc.pat.fchat.objects.Channel;
 import cc.pat.fchat.objects.Commands;
 import android.os.Bundle;
@@ -19,7 +19,7 @@ public class PublicChannelsFragment extends Fragment{
 
 	private ListView channelsList;
 	private TextView title;
-	private PublicChannelsAdapter publicChannelsAdapter;
+	private ChannelsAdapter publicChannelsAdapter;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState){
@@ -42,7 +42,7 @@ public class PublicChannelsFragment extends Fragment{
     }
 	
 	public void refreshList(ArrayList<Channel> channels){
-		publicChannelsAdapter = new PublicChannelsAdapter(channels, getActivity().getApplicationContext());
+		publicChannelsAdapter = new ChannelsAdapter(channels, getActivity().getApplicationContext());
 		channelsList.setAdapter(publicChannelsAdapter);		
 	}
 }
