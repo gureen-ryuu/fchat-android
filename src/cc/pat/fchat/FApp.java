@@ -339,12 +339,6 @@ public class FApp extends Application {
 			chatMessage.message = payloadJSON.getString("message");
 			chatMessage.sentTime = Calendar.getInstance().getTime();
 			chatMessage.isSender = false;
-			Channel destinationChannel = openChannelsList.get(channelID);
-			if(destinationChannel != null){
-				chatMessage.channel = destinationChannel;
-				destinationChannel.roomMessages.add(chatMessage);
-			}
-			
 		}
 
 		
