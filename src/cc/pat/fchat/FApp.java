@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cc.pat.fchat.db.FChatSQLiteHelper;
 import cc.pat.fchat.objects.Actions;
 import cc.pat.fchat.objects.Channel;
 import cc.pat.fchat.objects.Channel.ChannelMode;
@@ -70,6 +71,8 @@ public class FApp extends Application {
 	public ChatService mBoundService;
 	private Intent chatServiceIntent;
 	private HashMap<String, String> serverVariables;
+	
+	public FChatSQLiteHelper fChatSQLiteHelper;
 
 	private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -154,6 +157,8 @@ public class FApp extends Application {
 		//		friendsList = new HashMap<String, ChatCharacter>();
 		friendsList = new HashSet<String>();
 		serverVariables = new HashMap<String, String>();
+		
+		fChatSQLiteHelper = new FChatSQLiteHelper(this);
 		instance = this;
 	}
 
@@ -352,6 +357,7 @@ public class FApp extends Application {
 			chatMessage.message = payloadJSON.getString("message");
 			chatMessage.sentTime = Calendar.getInstance().getTime();
 			chatMessage.isSender = false;
+			fChatSQLiteHelper.insertMessage(chatMessage, "fchatprivatemessage" + chatMessage.from.identity);
 		}
 
 		public void CON(String payload) throws JSONException {

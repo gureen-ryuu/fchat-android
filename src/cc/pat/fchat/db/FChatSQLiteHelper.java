@@ -4,6 +4,7 @@ import cc.pat.fchat.objects.Channel;
 import cc.pat.fchat.objects.ChatMessage;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -107,5 +108,13 @@ public class FChatSQLiteHelper extends SQLiteOpenHelper {
 		values.put(FChatSQLiteHelper.COLUMN_MESSAGE_CHAT_ID, chatID);
 
 		writeDB.insert(FChatSQLiteHelper.TABLE_MESSAGES, null, values);
+	}
+
+	public Cursor getChannelMessages(String channelID) {
+		String[] args = { channelID };
+//		Cursor crs = readDB.rawQuery("SELECT * FROM " + TABLE_MESSAGES + " WHERE " + COLUMN_MESSAGE_CHAT_ID + " = ?", args);
+//		Cursor crs = readDB.rawQuery("SELECT "+ COLUMN_MESSAGE_FROM + ", " + COLUMN_MESSAGE_BODY + " FROM " + TABLE_MESSAGES, null);
+		Cursor crs = readDB.rawQuery("SELECT * FROM " + TABLE_MESSAGES, null);
+		return crs;
 	}
 }

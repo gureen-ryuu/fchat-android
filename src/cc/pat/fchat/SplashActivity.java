@@ -149,7 +149,7 @@ public class SplashActivity extends FragmentActivity {
 		username = (EditText) findViewById(R.id.username);
 		password = (EditText) findViewById(R.id.password);
 
-		username.setText("patochan");
+		username.setText("patokun");
 		password.setText("Ir0nmaiden");
 		loginButton = (Button) findViewById(R.id.loginButton);
 	}

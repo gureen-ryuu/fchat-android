@@ -1,0 +1,25 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:id="@+id/messageLayout" >
+
+    <TextView
+        android:id="@+id/fromTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="from" />
+
+    <TextView
+        android:id="@+id/doubleColumnTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/double_column" />
+
+    <TextView
+        android:id="@+id/messageBodyTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="messagebody" />
+
+</LinearLayout>

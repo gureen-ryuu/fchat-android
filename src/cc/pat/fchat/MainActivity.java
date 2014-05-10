@@ -2,6 +2,7 @@ package cc.pat.fchat;
 
 import java.util.ArrayList;
 
+import cc.pat.fchat.fragments.ChannelFragment;
 import cc.pat.fchat.fragments.PrivateChannelsFragment;
 import cc.pat.fchat.fragments.PublicChannelsFragment;
 import cc.pat.fchat.objects.Actions;
@@ -23,7 +24,7 @@ import android.widget.ListView;
 
 public class MainActivity extends FragmentActivity {
 
-	private String[] mFragments = { "Public Channels", "Private channels" };
+	private String[] mFragments = { "Public Channels", "Private channels" , "Private messages"};
 	private DrawerLayout mDrawerLayout;
 	private ListView mDrawerList;
 	private Fragment publicRoomsFragment;
@@ -110,6 +111,10 @@ public class MainActivity extends FragmentActivity {
 					privateRoomsFragment = new PrivateChannelsFragment();
 				}
 				nextFragment = privateRoomsFragment;
+				break;
+			case 2:
+				nextFragment = new ChannelFragment();
+				break;
 		}
 		// Insert the fragment by replacing any existing fragment
 		FragmentManager fragmentManager = getSupportFragmentManager();
