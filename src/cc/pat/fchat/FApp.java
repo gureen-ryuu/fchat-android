@@ -358,6 +358,9 @@ public class FApp extends Application {
 			chatMessage.sentTime = Calendar.getInstance().getTime();
 			chatMessage.isSender = false;
 			fChatSQLiteHelper.insertMessage(chatMessage, "fchatprivatemessage" + chatMessage.from.identity);
+			Intent intent = new Intent();
+			intent.setAction(Actions.MESSAGE_RECEIVED);
+			sendBroadcast(intent);
 		}
 
 		public void CON(String payload) throws JSONException {

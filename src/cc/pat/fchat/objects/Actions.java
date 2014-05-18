@@ -5,4 +5,5 @@ public class Actions {
 	public static final String LIS_DONE = "cc.pat.fchat.LIS_DONE";
 	public static final String PUBLIC_CHANNELS_RETRIEVED = "cc.pat.fchat.PUBLIC_CHANNELS_RETRIEVED";
 	public static final String PRIVATE_CHANNELS_RETRIEVED = "cc.pat.fchat.PRIVATE_CHANNELS_RETRIEVED";
+	public static final String MESSAGE_RECEIVED = "cc.pat.fchat.MESSAGE_RECEIVED";
 }

@@ -24,9 +24,10 @@ import android.widget.TextView;
 
 public class ChannelFragment extends Fragment {
 
-	private ListView channelsList;
+	private ListView messageList;
 	private TextView title;
 	private MessageCursorAdapter messageCursorAdapter;
+	private Cursor messageCursor;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -41,21 +42,27 @@ public class ChannelFragment extends Fragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View fragmentView = inflater.inflate(R.layout.fragment_channel, container, false);
-		Cursor messageCursor = FApp.getInstance().fChatSQLiteHelper.getChannelMessages("");
-//		title = (TextView) fragmentView.findViewById(R.id.titleView);
-//		title.setText("Channel test");
-//		Log.v("Pat", "opening message fragment: " + messageCursor.getCount() + " : : " + messageCursor.getColumnCount() + " ::: COLUMN NAME: " + messageCursor.getColumnName(0));
+		messageCursor = FApp.getInstance().fChatSQLiteHelper.getChannelMessages("");
+		//		title = (TextView) fragmentView.findViewById(R.id.titleView);
+		//		title.setText("Channel test");
+		//		Log.v("Pat", "opening message fragment: " + messageCursor.getCount() + " : : " + messageCursor.getColumnCount() + " ::: COLUMN NAME: " + messageCursor.getColumnName(0));
 
-		channelsList = (ListView) fragmentView.findViewById(R.id.messageList);
-		
+		messageList = (ListView) fragmentView.findViewById(R.id.messageList);
+
 		messageCursorAdapter = new MessageCursorAdapter(getActivity().getApplicationContext(), R.layout.channel_message, messageCursor,
-				new String[] { FChatSQLiteHelper.COLUMN_MESSAGE_FROM, FChatSQLiteHelper.COLUMN_MESSAGE_BODY }, new int[] {R.id.fromTextView, R.id.messageBodyTextView}, SimpleCursorAdapter.FLAG_AUTO_REQUERY);
-		channelsList.setAdapter(messageCursorAdapter);
+				new String[] { FChatSQLiteHelper.COLUMN_MESSAGE_FROM, FChatSQLiteHelper.COLUMN_MESSAGE_BODY }, new int[] { R.id.fromTextView, R.id.messageBodyTextView },
+				SimpleCursorAdapter.FLAG_AUTO_REQUERY);
+		messageList.setAdapter(messageCursorAdapter);
 		return fragmentView;
 	}
 
-	//	public void refreshList(ArrayList<Channel> channels){
-	//		publicChannelsAdapter = new ChannelsAdapter(channels, getActivity().getApplicationContext());
-	//		channelsList.setAdapter(publicChannelsAdapter);		
-	//	}
+	public void refreshList() {
+		Log.v("Pat", "Refreshing list!!!");
+		messageCursor = FApp.getInstance().fChatSQLiteHelper.getChannelMessages("");
+		messageCursorAdapter.changeCursor(messageCursor);
+		messageList.smoothScrollToPosition(messageList.getCount()-1);
+//		messageCursor.requery();
+//		messageCursorAdapter.notifyDataSetChanged();
+		
+	}
 }

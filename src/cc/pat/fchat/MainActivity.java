@@ -29,6 +29,8 @@ public class MainActivity extends FragmentActivity {
 	private ListView mDrawerList;
 	private Fragment publicRoomsFragment;
 	private Fragment privateRoomsFragment;
+	private Fragment channelsFragment;
+	
 	public boolean isReceiverRegistered = false;
 	public FChatReceiver fChatReceiver;
 	
@@ -45,6 +47,11 @@ public class MainActivity extends FragmentActivity {
 			else if(intent.getAction().equalsIgnoreCase(Actions.PRIVATE_CHANNELS_RETRIEVED) && privateRoomsFragment != null){
 					ArrayList<Channel> channels = (ArrayList<Channel>) intent.getSerializableExtra("channels");
 					((PrivateChannelsFragment)privateRoomsFragment).refreshList(channels);
+			}
+			else if(intent.getAction().equalsIgnoreCase(Actions.MESSAGE_RECEIVED)){
+//				ArrayList<Channel> channels = (ArrayList<Channel>) intent.getSerializableExtra("channels");
+//				((PrivateChannelsFragment)privateRoomsFragment).refreshList(channels);
+				((ChannelFragment)channelsFragment).refreshList();
 			}
 		}
 	}
@@ -70,6 +77,7 @@ public class MainActivity extends FragmentActivity {
 			IntentFilter filter = new IntentFilter();
 			filter.addAction(Actions.PUBLIC_CHANNELS_RETRIEVED);
 			filter.addAction(Actions.PRIVATE_CHANNELS_RETRIEVED);
+			filter.addAction(Actions.MESSAGE_RECEIVED);
 			
 			registerReceiver(fChatReceiver, filter);
 			isReceiverRegistered = true;
@@ -113,7 +121,10 @@ public class MainActivity extends FragmentActivity {
 				nextFragment = privateRoomsFragment;
 				break;
 			case 2:
-				nextFragment = new ChannelFragment();
+				if(channelsFragment == null){
+					channelsFragment = new ChannelFragment();
+				}
+				nextFragment = channelsFragment;
 				break;
 		}
 		// Insert the fragment by replacing any existing fragment
