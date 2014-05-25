@@ -109,6 +109,10 @@ public class FChatSQLiteHelper extends SQLiteOpenHelper {
 
 		writeDB.insert(FChatSQLiteHelper.TABLE_MESSAGES, null, values);
 	}
+	
+	public void deleteChannel(Channel channel){
+		writeDB.delete(FChatSQLiteHelper.TABLE_OPEN_CHANNELS, COLUMN_CHANNEL_NAME + " = ?" , new String[] {channel.channelName});
+	}
 
 	public Cursor getChannelMessages(String channelID) {
 		String[] args = { channelID };
